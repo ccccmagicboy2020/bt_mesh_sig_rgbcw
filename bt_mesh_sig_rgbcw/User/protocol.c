@@ -111,8 +111,10 @@ void reset_bt_module(void)
 const DOWNLOAD_CMD_S xdata download_cmd[] =
 {
   {DPID_SWITCH_LED, DP_TYPE_BOOL},
+  {DPID_WORK_MODE, DP_TYPE_ENUM},
   {DPID_BRIGHT_VALUE, DP_TYPE_VALUE},
   {DPID_TEMP_VALUE, DP_TYPE_VALUE},
+  {DPID_COLOUR_DATA, DP_TYPE_STRING},
   {DPID_CDS, DP_TYPE_ENUM},
   {DPID_PIR_DELAY, DP_TYPE_VALUE},
   {DPID_SWITCH_XBR, DP_TYPE_BOOL},
@@ -223,6 +225,9 @@ void all_data_update(void)
 	mcu_dp_value_update(DPID_LIGHT_ADC_VALUE,light_ad); //VALUE型数据上报;
 	mcu_dp_value_update(DPID_SUM0_VALUE,SUM0); //VALUE型数据上报;
 	mcu_dp_value_update(DPID_SUM1_VALUE,SUM1); //VALUE型数据上报;
+	
+	//mcu_dp_string_update(DPID_COLOUR_DATA,当前彩光指针,当前彩光数据长度); //STRING型数据上报;
+	//mcu_dp_enum_update(DPID_WORK_MODE,当前模式); //枚举型数据上报;
 
 }
 
@@ -255,6 +260,41 @@ static unsigned char dp_download_switch_led_handle(const unsigned char value[], 
     
     //处理完DP数据后应有反馈
     ret = mcu_dp_bool_update(DPID_SWITCH_LED, reset_bt_bn);
+    if(ret == SUCCESS)
+        return SUCCESS;
+    else
+        return ERROR;
+
+}
+/*****************************************************************************
+函数名称 : dp_download_work_mode_handle
+功能描述 : 针对DPID_WORK_MODE的处理函数
+输入参数 : value:数据源数据
+        : length:数据长度
+返回参数 : 成功返回:SUCCESS/失败返回:ERROR
+使用说明 : 可下发可上报类型,需要在处理完数据后上报处理结果至app
+*****************************************************************************/
+static unsigned char dp_download_work_mode_handle(const unsigned char value[], unsigned short length)
+{
+    //示例:当前DP类型为ENUM
+    unsigned char ret;
+    unsigned char work_mode;
+    
+    work_mode = mcu_get_dp_download_enum(value,length);
+    switch(work_mode) {
+        case 0:
+        break;
+        
+        case 1:
+        break;
+        
+        default:
+    
+        break;
+    }
+    
+    //处理完DP数据后应有反馈
+    ret = mcu_dp_enum_update(DPID_WORK_MODE, work_mode);
     if(ret == SUCCESS)
         return SUCCESS;
     else
@@ -350,6 +390,39 @@ static unsigned char dp_download_temp_value_handle(const unsigned char value[], 
     
     //处理完DP数据后应有反馈
     ret = mcu_dp_value_update(DPID_TEMP_VALUE,temper_value);
+    if(ret == SUCCESS)
+        return SUCCESS;
+    else
+        return ERROR;
+}
+/*****************************************************************************
+函数名称 : dp_download_colour_data_handle
+功能描述 : 针对DPID_COLOUR_DATA的处理函数
+输入参数 : value:数据源数据
+        : length:数据长度
+返回参数 : 成功返回:SUCCESS/失败返回:ERROR
+使用说明 : 可下发可上报类型,需要在处理完数据后上报处理结果至app
+*****************************************************************************/
+static unsigned char dp_download_colour_data_handle(const unsigned char value[], unsigned short length)
+{
+    //示例:当前DP类型为STRING
+    unsigned char ret;
+    /*
+    //STRING类型数据处理
+    unsigned char string_data[8];
+    
+    string_data[0] = value[0];
+    string_data[1] = value[1];
+    string_data[2] = value[2];
+    string_data[3] = value[3];
+    string_data[4] = value[4];
+    string_data[5] = value[5];
+    string_data[6] = value[6];
+    string_data[7] = value[7];
+    */
+    
+    //处理完DP数据后应有反馈
+    ret = mcu_dp_string_update(DPID_COLOUR_DATA,value, length);
     if(ret == SUCCESS)
         return SUCCESS;
     else
@@ -914,6 +987,11 @@ unsigned char dp_download_handle(unsigned char dpid,const unsigned char value[],
 				}
 			}
         break;
+        case DPID_WORK_MODE:
+            //模式处理函数
+            ret = dp_download_work_mode_handle(value,length);
+			switchcnt = 0;
+        break;
         case DPID_BRIGHT_VALUE:
             //亮度值处理函数
             ret = dp_download_bright_value_handle(value,length);
@@ -922,6 +1000,11 @@ unsigned char dp_download_handle(unsigned char dpid,const unsigned char value[],
         case DPID_TEMP_VALUE:
             //冷暖值处理函数
             ret = dp_download_temp_value_handle(value,length);
+			switchcnt = 0;
+        break;
+        case DPID_COLOUR_DATA:
+            //彩光处理函数
+            ret = dp_download_colour_data_handle(value,length);
 			switchcnt = 0;
         break;
         case DPID_CDS:
@@ -935,7 +1018,7 @@ unsigned char dp_download_handle(unsigned char dpid,const unsigned char value[],
             switchcnt = 0;
         break;
         case DPID_SWITCH_XBR:
-            //感应开关处理函数
+            //雷达开关处理函数
             ret = dp_download_switch_xbr_handle(value,length);
             switchcnt = 0;
         break;
@@ -955,7 +1038,7 @@ unsigned char dp_download_handle(unsigned char dpid,const unsigned char value[],
             switchcnt = 0;
         break;
         case DPID_SWITCH_LINKAGE:
-            //联动 处理函数
+            //联动处理函数
             ret = dp_download_switch_linkage_handle(value,length);
             switchcnt = 0;
         break;
