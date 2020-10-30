@@ -69,6 +69,9 @@ const DOWNLOAD_CMD_S download_cmd[] =
   {DPID_LIGHT_ADC_VALUE, DP_TYPE_VALUE},
   {DPID_SUM0_VALUE, DP_TYPE_VALUE},
   {DPID_SUM1_VALUE, DP_TYPE_VALUE},
+  {DPID_R_VALUE, DP_TYPE_VALUE},
+  {DPID_G_VALUE, DP_TYPE_VALUE},
+  {DPID_B_VALUE, DP_TYPE_VALUE},
 };
 
 
@@ -143,6 +146,9 @@ void all_data_update(void)
     mcu_dp_value_update(DPID_LIGHT_ADC_VALUE,当前光敏AD值); //VALUE型数据上报;
     mcu_dp_value_update(DPID_SUM0_VALUE,当前雷达IF SUM0); //VALUE型数据上报;
     mcu_dp_value_update(DPID_SUM1_VALUE,当前雷达IF SUM1); //VALUE型数据上报;
+    mcu_dp_value_update(DPID_R_VALUE,当前红); //VALUE型数据上报;
+    mcu_dp_value_update(DPID_G_VALUE,当前绿); //VALUE型数据上报;
+    mcu_dp_value_update(DPID_B_VALUE,当前蓝); //VALUE型数据上报;
 
 
 
@@ -548,6 +554,87 @@ static unsigned char dp_download_all_day_micro_light_handle(const unsigned char 
     else
         return ERROR;
 }
+/*****************************************************************************
+函数名称 : dp_download_r_value_handle
+功能描述 : 针对DPID_R_VALUE的处理函数
+输入参数 : value:数据源数据
+        : length:数据长度
+返回参数 : 成功返回:SUCCESS/失败返回:ERROR
+使用说明 : 可下发可上报类型,需要在处理完数据后上报处理结果至app
+*****************************************************************************/
+static unsigned char dp_download_r_value_handle(const unsigned char value[], unsigned short length)
+{
+    //示例:当前DP类型为VALUE
+    unsigned char ret;
+    unsigned long r_value;
+    
+    r_value = mcu_get_dp_download_value(value,length);
+    /*
+    //VALUE类型数据处理
+    
+    */
+    
+    //处理完DP数据后应有反馈
+    ret = mcu_dp_value_update(DPID_R_VALUE,r_value);
+    if(ret == SUCCESS)
+        return SUCCESS;
+    else
+        return ERROR;
+}
+/*****************************************************************************
+函数名称 : dp_download_g_value_handle
+功能描述 : 针对DPID_G_VALUE的处理函数
+输入参数 : value:数据源数据
+        : length:数据长度
+返回参数 : 成功返回:SUCCESS/失败返回:ERROR
+使用说明 : 可下发可上报类型,需要在处理完数据后上报处理结果至app
+*****************************************************************************/
+static unsigned char dp_download_g_value_handle(const unsigned char value[], unsigned short length)
+{
+    //示例:当前DP类型为VALUE
+    unsigned char ret;
+    unsigned long g_value;
+    
+    g_value = mcu_get_dp_download_value(value,length);
+    /*
+    //VALUE类型数据处理
+    
+    */
+    
+    //处理完DP数据后应有反馈
+    ret = mcu_dp_value_update(DPID_G_VALUE,g_value);
+    if(ret == SUCCESS)
+        return SUCCESS;
+    else
+        return ERROR;
+}
+/*****************************************************************************
+函数名称 : dp_download_b_value_handle
+功能描述 : 针对DPID_B_VALUE的处理函数
+输入参数 : value:数据源数据
+        : length:数据长度
+返回参数 : 成功返回:SUCCESS/失败返回:ERROR
+使用说明 : 可下发可上报类型,需要在处理完数据后上报处理结果至app
+*****************************************************************************/
+static unsigned char dp_download_b_value_handle(const unsigned char value[], unsigned short length)
+{
+    //示例:当前DP类型为VALUE
+    unsigned char ret;
+    unsigned long b_value;
+    
+    b_value = mcu_get_dp_download_value(value,length);
+    /*
+    //VALUE类型数据处理
+    
+    */
+    
+    //处理完DP数据后应有反馈
+    ret = mcu_dp_value_update(DPID_B_VALUE,b_value);
+    if(ret == SUCCESS)
+        return SUCCESS;
+    else
+        return ERROR;
+}
 
 
 /******************************************************************************
@@ -678,6 +765,18 @@ unsigned char dp_download_handle(unsigned char dpid,const unsigned char value[],
         case DPID_ALL_DAY_MICRO_LIGHT:
             //全天伴亮处理函数
             ret = dp_download_all_day_micro_light_handle(value,length);
+        break;
+        case DPID_R_VALUE:
+            //红处理函数
+            ret = dp_download_r_value_handle(value,length);
+        break;
+        case DPID_G_VALUE:
+            //绿处理函数
+            ret = dp_download_g_value_handle(value,length);
+        break;
+        case DPID_B_VALUE:
+            //蓝处理函数
+            ret = dp_download_b_value_handle(value,length);
         break;
 
 

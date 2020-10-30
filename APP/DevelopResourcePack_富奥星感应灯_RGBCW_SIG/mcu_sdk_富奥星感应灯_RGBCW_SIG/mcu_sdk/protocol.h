@@ -140,6 +140,15 @@ mcu在bt模块正确联网后可调用mcu_get_system_time()函数发起校时功
 //雷达IF SUM1(只上报)
 //备注:
 #define DPID_SUM1_VALUE 120
+//红(可下发可上报)
+//备注:
+#define DPID_R_VALUE 121
+//绿(可下发可上报)
+//备注:
+#define DPID_G_VALUE 122
+//蓝(可下发可上报)
+//备注:
+#define DPID_B_VALUE 123
 
 
 
