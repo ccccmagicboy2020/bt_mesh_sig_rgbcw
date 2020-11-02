@@ -3,8 +3,8 @@
 //#include "Mcu_api.h"
 #include "bluetooth.h"
 
-#define V12 //硬件板卡的版本
-//#define V10
+//#define V12 //硬件板卡的版本
+#define XBR403	//硬件板卡
 
 //#define  VERSION  0X21
 
@@ -111,6 +111,14 @@ u8 idata Light_on_flagpre = 0;
 u8 xdata temper_value = 0;			//冷暖值
 u8 xdata all_day_micro_light_enable = 0;
 u16 xdata radar_trig_times = 0;
+
+u8 xdata rr_value = 0;			//R值
+u8 xdata gg_value = 0;			//G值
+u8 xdata bb_value = 0;			//B值
+
+unsigned char PWM_r_init(unsigned char ab);
+unsigned char PWM_g_init(unsigned char ab);
+unsigned char PWM_b_init(unsigned char ab);
 
 unsigned char PWM0init(unsigned char ab);
 unsigned char PWM3init(unsigned char ab);
@@ -277,7 +285,7 @@ void ADC_Init()
 	ADCC0 |= 0x03; //参考源为内部2V
 	ADCC0 |= 0x80; //打开ADC转换电源
 	Delay_us(20);  //延时20us，确保ADC系统稳定
-	ADCC1 = 0x01;  //选择外部通道1
+	ADCC1 = 0x02;  //选择外部通道2
 	ADCC2 = 0x4B;  //8分频	  //转换结果12位数据，数据右对齐，ADC时钟16分频-1MHZ//0X4B-8分频//0X49-4分频
 }
 
@@ -330,6 +338,8 @@ void GPIO_Init()
 
 	P1M0 = P1M0 & 0xFF | 0x88; //P10设置为推挽输出
 							   //P11设置为推挽输出
+							   
+							   
 
 	P0M0 = P0M0 & 0x0F | 0x30; //P01设置为模拟输入
 
@@ -344,6 +354,17 @@ void GPIO_Init()
 
 	//	P0M3 = P0M3&0x0F|0x20;				  //P07设置为上拉输入
 
+#endif
+
+#ifdef XBR403
+	//PWM & ADC
+	P1M0 = P1M0 & 0xF0 | 0x08; //P10设置为推挽输出
+	P0M0 = P0M0 & 0xFF | 0x88; //P00设置为推挽输出
+							   //P01设置为推挽输出
+	P0M1 = P0M1 & 0xFF | 0x83; //P03设置为推挽输出
+							   //P02设置为模拟输入
+	P0M3 = P0M3 & 0xF0 | 0x08; //P06设置为推挽输出
+	P2M1 = P2M1 & 0xF0 | 0x03; //P22设置为模拟输入
 #endif
 }
 
@@ -574,8 +595,8 @@ uchar read_ad(uchar ch)
 		Delay_us(20);
 	}
 
-	//ADC_P14_AN5;
-	ADCC1 = 1; //切换到an1
+	//
+	ADCC1 = 2; //切换到an2
 	i = ad_sum >> 8;
 
 	Delay_us(100);
@@ -1125,6 +1146,99 @@ void wait2(void)
 	// 	Delay_ms(4);	//4ms
 }
 
+unsigned char PWM_r_init(unsigned char ab)
+{
+	float i11;
+	u16 j11;
+	
+	if (1 == ab)
+	{
+		j11 = 0;
+	}
+	else
+	{
+		i11 = ab * 511 / 100;
+		j11 = (u16)(i11 + 0.5);
+	}
+	
+#ifdef XBR403
+	PWM01_MAP = 0x06;					//PWM01通道映射P06口
+#endif		
+	
+	PWM0C = 0x01;					  	//PWM0高有效，PWM01高有效，时钟8分频 
+
+	PWM0PH = 0x01;						//周期高4位设置为0x03
+	PWM0PL = 0xFF;						//周期低8位设置为0xFF
+
+	PWM0DTH = (u8)(j11>>8);				//PWM01高4位占空比0x01
+	PWM0DTL = (u8)j11;					//PWM01低8位占空比0x55
+
+	PWM0EN = 0x0F;						//使能PWM0，工作于独立模式，全部输出
+	return 0;
+}
+
+unsigned char PWM_g_init(unsigned char ab)
+{
+	float i11;
+	u16 j11;
+	
+	if (1 == ab)
+	{
+		j11 = 0;
+	}
+	else
+	{
+		i11 = ab * 511 / 100;
+		j11 = (u16)(i11 + 0.5);
+	}
+	
+#ifdef XBR403
+	PWM1_MAP = 0x00;					//PWM0通道映射P00口
+#endif		
+	PWM1C = 0x01;					  	//PWM0高有效，PWM01高有效，时钟8分频 
+
+	PWM1PH = 0x01;						//周期高4位设置为0x03
+	PWM1PL = 0xFF;						//周期低8位设置为0xFF
+
+	PWM1DH = (u8)(j11>>8);				//PWM0高4位占空比0x01
+	PWM1DL = (u8)j11;					//PWM0低8位占空比0x55
+
+	PWM1EN = 0x0F;						//使能PWM0，工作于独立模式	
+	return 0;
+}
+
+unsigned char PWM_b_init(unsigned char ab)
+{
+	float i11;
+	u16 j11;
+	
+	if (1 == ab)
+	{
+		j11 = 0;
+	}
+	else
+	{
+		i11 = ab * 511 / 100;
+		j11 = (u16)(i11 + 0.5);
+	}
+	
+#ifdef XBR403
+	PWM11_MAP = 0x01;					//PWM11通道映射P01口
+#endif		
+	
+	PWM1C = 0x01;					  	//PWM1高有效，PWM11高有效，时钟8分频 
+
+	PWM1PH = 0x01;						//周期高4位设置为0x03
+	PWM1PL = 0xFF;						//周期低8位设置为0xFF
+
+	PWM1DTH = (u8)(j11>>8);				//PWM11高4位占空比0x01
+	PWM1DTL = (u8)j11;					//PWM11低8位占空比0x55
+
+	PWM1EN = 0x0F;						//使能PWM1，工作于独立模式，全部输出
+	return 0;
+}
+
+//用于冷暖
 unsigned char PWM0init(unsigned char ab)
 {
 	float i11;
@@ -1140,7 +1254,10 @@ unsigned char PWM0init(unsigned char ab)
 		j11 = (u16)(i11 + 0.5);
 	}
 	
-	PWM0_MAP = 0x11;					//PWM0通道映射P11口
+#ifdef XBR403
+	PWM0_MAP = 0x03;					//PWM0通道映射P03口
+#endif	
+	
 	PWM0C = 0x01;					  	//PWM0高有效，PWM01高有效，时钟8分频 
 	
 	//独立模式下，PWM0和PWM01共用一个周期寄存器
@@ -1167,6 +1284,7 @@ unsigned char PWM0init(unsigned char ab)
 	return 0;
 }
 
+//用于亮度
 unsigned char PWM3init(unsigned char ab)
 {
 	float i11;
@@ -1197,6 +1315,10 @@ unsigned char PWM3init(unsigned char ab)
 #ifdef V12
 	PWM3_MAP = 0x10; //PWM3映射P10口
 
+#endif
+
+#ifdef XBR403
+	PWM3_MAP = 0x10; //PWM3映射P10口
 #endif
 
 	//周期计算 	= 0xFF / (Fosc / PWM分频系数)		（Fosc见系统时钟配置的部分）

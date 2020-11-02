@@ -51,6 +51,10 @@ extern u16 xdata radar_trig_times;
 extern ulong xdata SUM0;	   //SUM10的平均值
 extern ulong xdata SUM1;	   //平均绝对离差的累加合的瞬时值
 
+extern u8 xdata rr_value;			//R值
+extern u8 xdata gg_value;			//G值
+extern u8 xdata bb_value;			//B值
+
 //const char xdata led_bn_on[]={"led on"};
 //const char xdata led_bn_off[]={"led off"};
 //const char xdata radar_bn_on[]={"radar on"};
@@ -75,6 +79,9 @@ void Flash_EraseBlock(unsigned int fui_Address);//flash扇区擦除
 void FLASH_WriteData(unsigned char fuc_SaveData, unsigned int fui_Address);//flash写入
 void Delay_us_1(uint q1);
 unsigned char PWM0init(unsigned char ab);
+unsigned char PWM_r_init(unsigned char ab);
+unsigned char PWM_g_init(unsigned char ab);
+unsigned char PWM_b_init(unsigned char ab);
 
 void reset_bt_module(void)
 {
@@ -128,6 +135,9 @@ const DOWNLOAD_CMD_S xdata download_cmd[] =
   {DPID_LIGHT_ADC_VALUE, DP_TYPE_VALUE},
   {DPID_SUM0_VALUE, DP_TYPE_VALUE},
   {DPID_SUM1_VALUE, DP_TYPE_VALUE},
+  {DPID_R_VALUE, DP_TYPE_VALUE},
+  {DPID_G_VALUE, DP_TYPE_VALUE},
+  {DPID_B_VALUE, DP_TYPE_VALUE},
 };
 
 
@@ -228,6 +238,10 @@ void all_data_update(void)
 	
 	//mcu_dp_string_update(DPID_COLOUR_DATA,当前彩光指针,当前彩光数据长度); //STRING型数据上报;
 	//mcu_dp_enum_update(DPID_WORK_MODE,当前模式); //枚举型数据上报;
+	
+    mcu_dp_value_update(DPID_R_VALUE,rr_value); //VALUE型数据上报;
+    mcu_dp_value_update(DPID_G_VALUE,gg_value); //VALUE型数据上报;
+    mcu_dp_value_update(DPID_B_VALUE,bb_value); //VALUE型数据上报;	
 
 }
 
@@ -894,6 +908,103 @@ static unsigned char dp_download_all_day_micro_light_handle(const unsigned char 
         return SUCCESS;
     else
         return ERROR;
+
+}
+/*****************************************************************************
+函数名称 : dp_download_r_value_handle
+功能描述 : 针对DPID_R_VALUE的处理函数
+输入参数 : value:数据源数据
+        : length:数据长度
+返回参数 : 成功返回:SUCCESS/失败返回:ERROR
+使用说明 : 可下发可上报类型,需要在处理完数据后上报处理结果至app
+*****************************************************************************/
+static unsigned char dp_download_r_value_handle(const unsigned char value[], unsigned short length)
+{
+    //示例:当前DP类型为VALUE
+    unsigned char ret;
+    unsigned long r_value;
+    
+    r_value = mcu_get_dp_download_value(value,length);
+    /*
+    //VALUE类型数据处理
+    
+    */
+	rr_value = r_value;
+	
+	//do some pwm control
+	PWM_r_init(rr_value);
+	
+	savevar();	
+    
+    //处理完DP数据后应有反馈
+    ret = mcu_dp_value_update(DPID_R_VALUE,rr_value);
+    if(ret == SUCCESS)
+        return SUCCESS;
+    else
+        return ERROR;
+}
+/*****************************************************************************
+函数名称 : dp_download_g_value_handle
+功能描述 : 针对DPID_G_VALUE的处理函数
+输入参数 : value:数据源数据
+        : length:数据长度
+返回参数 : 成功返回:SUCCESS/失败返回:ERROR
+使用说明 : 可下发可上报类型,需要在处理完数据后上报处理结果至app
+*****************************************************************************/
+static unsigned char dp_download_g_value_handle(const unsigned char value[], unsigned short length)
+{
+    //示例:当前DP类型为VALUE
+    unsigned char ret;
+    unsigned long g_value;
+    
+    g_value = mcu_get_dp_download_value(value,length);
+    /*
+    //VALUE类型数据处理
+    
+    */
+	gg_value = g_value;
+	
+	//do some pwm control
+	PWM_g_init(gg_value);
+	
+	savevar();	    
+    //处理完DP数据后应有反馈
+    ret = mcu_dp_value_update(DPID_G_VALUE,gg_value);
+    if(ret == SUCCESS)
+        return SUCCESS;
+    else
+        return ERROR;
+}
+/*****************************************************************************
+函数名称 : dp_download_b_value_handle
+功能描述 : 针对DPID_B_VALUE的处理函数
+输入参数 : value:数据源数据
+        : length:数据长度
+返回参数 : 成功返回:SUCCESS/失败返回:ERROR
+使用说明 : 可下发可上报类型,需要在处理完数据后上报处理结果至app
+*****************************************************************************/
+static unsigned char dp_download_b_value_handle(const unsigned char value[], unsigned short length)
+{
+    //示例:当前DP类型为VALUE
+    unsigned char ret;
+    unsigned long b_value;
+    
+    b_value = mcu_get_dp_download_value(value,length);
+    /*
+    //VALUE类型数据处理
+    
+    */
+	bb_value = b_value;
+	
+	//do some pwm control
+	PWM_b_init(bb_value);
+    
+    //处理完DP数据后应有反馈
+    ret = mcu_dp_value_update(DPID_B_VALUE,bb_value);
+    if(ret == SUCCESS)
+        return SUCCESS;
+    else
+        return ERROR;
 }
 
 
@@ -1047,6 +1158,23 @@ unsigned char dp_download_handle(unsigned char dpid,const unsigned char value[],
             ret = dp_download_all_day_micro_light_handle(value,length);
 			switchcnt = 0;
         break;
+        case DPID_R_VALUE:
+            //红处理函数
+            ret = dp_download_r_value_handle(value,length);
+			switchcnt = 0;
+        break;
+        case DPID_G_VALUE:
+            //绿处理函数
+            ret = dp_download_g_value_handle(value,length);
+			switchcnt = 0;
+        break;
+        case DPID_B_VALUE:
+            //蓝处理函数
+            ret = dp_download_b_value_handle(value,length);
+			switchcnt = 0;
+        break;
+
+
   default:
         switchcnt = 0;
     break;
